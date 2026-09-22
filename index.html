@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="dBm level summing, correlated/uncorrelated voltage summing, unit converter, dB/ratio converter and VSWR/return-loss converter — five RF level tools in one page.">
+<title>dB Calculator</title>
+<style>
+  html{ height:100%; }
+  body{ margin:0; min-height:100%; }
+  img{ max-width:100%; }
+  [hidden]{ display:none !important; }
+</style>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#eef1f4;
+    --panel:#ffffff;
+    --panel-alt:#f5f8fa;
+    --border:#d7dee4;
+    --border-strong:#c1cbd3;
+    --text:#172029;
+    --muted:#5b6b78;
+    --accent:#0f8a7c;
+    --accent-text:#ffffff;
+    --accent-soft:#d9f2ee;
+    --warn:#b5650a;
+    --danger:#b3392f;
+    --readout-bg:#eef4f3;
+    --readout-border:#c9d9d5;
+    --readout-text:#083d36;
+    --readout-dim:#4a6560;
+    --shadow: 0 1px 2px rgba(23,32,41,0.06), 0 6px 16px -8px rgba(23,32,41,0.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0c1013;
+      --panel:#151b20;
+      --panel-alt:#1a2126;
+      --border:#2a343b;
+      --border-strong:#3a4750;
+      --text:#e7edf1;
+      --muted:#8fa0aa;
+      --accent:#4fd1c5;
+      --accent-text:#06211d;
+      --accent-soft:rgba(79,209,197,0.14);
+      --warn:#f2a94e;
+      --danger:#ef7a6d;
+      --readout-bg:#0b1417;
+      --readout-border:#23403b;
+      --readout-text:#b6ffe9;
+      --readout-dim:#8fb3aa;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 10px 24px -12px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c1013;
+    --panel:#151b20;
+    --panel-alt:#1a2126;
+    --border:#2a343b;
+    --border-strong:#3a4750;
+    --text:#e7edf1;
+    --muted:#8fa0aa;
+    --accent:#4fd1c5;
+    --accent-text:#06211d;
+    --accent-soft:rgba(79,209,197,0.14);
+    --warn:#f2a94e;
+    --danger:#ef7a6d;
+    --readout-bg:#0b1417;
+    --readout-border:#23403b;
+    --readout-text:#b6ffe9;
+    --readout-dim:#8fb3aa;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 10px 24px -12px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    padding-inline:16px;
+    padding-block:16px 40px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{ max-width:1040px; margin:0 auto; }
+
+  header.top{ margin-bottom:14px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  header.top .titles{ min-width:0; }
+  .theme-toggle{
+    display:inline-flex; border:1px solid var(--border); border-radius:9px; overflow:hidden; flex:0 0 auto;
+    background:var(--panel-alt); margin-top:2px;
+  }
+  .theme-toggle button{
+    font-family:inherit; font-size:12px; font-weight:600; color:var(--muted); background:transparent;
+    border:none; border-right:1px solid var(--border); min-height:36px; padding:6px 10px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+  }
+  .theme-toggle button:last-child{ border-right:none; }
+  .theme-toggle button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-text); }
+  .theme-toggle svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  @media (max-width:480px){ .theme-toggle button .tl{ display:none; } .theme-toggle button{ padding:6px 9px; } }
+  .eyebrow{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin:0 0 4px;
+  }
+  h1{
+    font-size:clamp(22px,5vw,32px); line-height:1.1; margin:0 0 6px;
+    letter-spacing:-0.01em; text-wrap:balance; font-weight:700;
+  }
+  .sub{ color:var(--muted); font-size:14px; margin:0; max-width:64ch; line-height:1.5; }
+  @media (max-width:600px){ .sub{ display:none; } }
+
+  /* ---- tabs: wrapping grid on phone, single row on PC ---- */
+  nav.tabs{
+    position:sticky; top:env(safe-area-inset-top, 0px); z-index:5;
+    display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
+    margin:14px 0 14px; padding:8px 0;
+    background:var(--bg);
+  }
+  .tab-btn{
+    font-family:inherit; font-size:13px; font-weight:600;
+    color:var(--muted); background:var(--panel-alt);
+    border:1px solid var(--border); border-radius:9px;
+    min-height:44px; padding:8px 10px; cursor:pointer;
+    transition:background .12s, color .12s, border-color .12s;
+    line-height:1.2;
+  }
+  .tab-btn .long{ display:inline; }
+  .tab-btn .short{ display:none; }
+  @media (max-width:640px){
+    nav.tabs{ grid-template-columns:repeat(5,1fr); gap:4px; }
+    .tab-btn{ font-size:12.5px; padding:8px 4px; }
+    .tab-btn .long{ display:none; }
+    .tab-btn .short{ display:inline; }
+  }
+  .tab-btn:hover{ color:var(--text); border-color:var(--border-strong); }
+  .tab-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .tab-btn[aria-selected="true"]{
+    background:var(--accent); color:var(--accent-text); border-color:var(--accent);
+  }
+
+  /* ---- panels ---- */
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:18px; box-shadow:var(--shadow);
+  }
+  .panel[hidden]{ display:none; }
+  .panel-head{ margin-bottom:14px; }
+  .panel-title{ font-size:17px; font-weight:700; margin:0 0 3px; }
+  .panel-note{ font-size:13px; color:var(--muted); margin:0; line-height:1.5; max-width:70ch; }
+
+  .panel-grid{ display:grid; grid-template-columns:1fr; gap:16px; }
+  .panel-inputs{ min-width:0; }
+  .panel-result{ min-width:0; }
+
+  /* PC: two columns, readout sticks on the right */
+  @media (min-width:860px){
+    .panel{ padding:24px; }
+    .panel-grid{ grid-template-columns:minmax(0,1fr) minmax(300px,380px); gap:24px; align-items:start; }
+    .panel-result{ position:sticky; top:84px; }
+    .panel-grid.wide{ grid-template-columns:1fr; }
+    .panel-grid.wide .panel-result{ position:static; }
+  }
+
+  .field-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:14px; }
+  .field{ display:flex; flex-direction:column; gap:5px; min-width:120px; flex:1 1 140px; }
+  .field.narrow{ flex:0 1 150px; min-width:110px; }
+  .field.auto{ flex:0 0 auto; }
+  label.flabel{
+    font-size:11px; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.06em;
+  }
+  input[type="number"], input[type="text"], select{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:16px; color:var(--text); background:var(--panel-alt);
+    border:1px solid var(--border); border-radius:9px;
+    min-height:44px; padding:8px 12px; width:100%;
+    font-variant-numeric:tabular-nums; appearance:none; -webkit-appearance:none;
+  }
+  select{
+    font-family:'IBM Plex Sans', sans-serif; cursor:pointer; padding-right:30px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%238fa0aa' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center;
+  }
+  @media (min-width:860px){
+    input[type="number"], input[type="text"], select{ font-size:15px; min-height:42px; }
+    input[type="number"]{ appearance:auto; -webkit-appearance:auto; }
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible{
+    outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);
+  }
+
+  .seg{ display:inline-flex; border:1px solid var(--border); border-radius:9px; overflow:hidden; max-width:100%; }
+  .seg button{
+    font-family:inherit; font-size:13px; font-weight:600; color:var(--muted);
+    background:var(--panel-alt); border:none; min-height:44px; padding:8px 14px; cursor:pointer;
+    border-right:1px solid var(--border); flex:1 1 auto; white-space:nowrap;
+  }
+  .seg button:last-child{ border-right:none; }
+  .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-text); }
+  @media (max-width:480px){ .seg{ display:flex; width:100%; } .seg button{ padding:8px 6px; font-size:12.5px; } }
+
+  /* ---- level rows ---- */
+  .rows{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .level-row{
+    display:flex; gap:8px; align-items:center; flex-wrap:nowrap;
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:10px; padding:8px;
+  }
+  .level-row .opgrp{ display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; flex:0 0 auto; }
+  .level-row .opgrp button{
+    font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600;
+    width:36px; height:44px; border:none; background:var(--panel); color:var(--muted); cursor:pointer;
+  }
+  .level-row .opgrp button:disabled{ cursor:default; opacity:.55; }
+  .level-row .opgrp button.active{ background:var(--accent); color:var(--accent-text); opacity:1; }
+  .level-row input[type="number"]{ flex:1 1 60px; min-width:0; background:var(--panel); }
+  .level-row select{ flex:0 0 88px; min-width:0; background-color:var(--panel); }
+  .rm-btn{
+    flex:0 0 auto; width:40px; height:44px; border-radius:8px; border:1px solid var(--border);
+    background:var(--panel); color:var(--danger); font-size:18px; cursor:pointer; line-height:1;
+  }
+  .rm-btn:hover{ background:var(--danger); color:#fff; border-color:var(--danger); }
+  .level-row .spacer{ flex:0 0 40px; }
+
+  .add-btn{
+    font-family:inherit; font-size:13px; font-weight:600; color:var(--accent);
+    background:var(--accent-soft); border:1px dashed var(--accent); border-radius:9px;
+    min-height:44px; padding:8px 14px; cursor:pointer; width:100%;
+  }
+  @media (min-width:860px){ .add-btn{ width:auto; } }
+  .add-btn:hover{ filter:brightness(1.05); }
+
+  /* ---- readout (follows theme, high contrast) ---- */
+  .readout{
+    background:var(--readout-bg); border:1px solid var(--readout-border); border-radius:12px;
+    padding:14px 16px;
+  }
+  .readout-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:4px 18px; }
+  .readout-grid.cols3{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+  @media (max-width:420px){ .readout-grid.cols3{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .ro-item{ padding-block:7px; min-width:0; }
+  .ro-label{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--readout-dim); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .ro-value{
+    font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; color:var(--readout-text);
+    font-variant-numeric:tabular-nums; letter-spacing:.01em; overflow-wrap:anywhere;
+  }
+  .ro-value.small{ font-size:17px; }
+  .ro-unit{ font-size:13px; font-weight:600; color:var(--readout-dim); margin-left:5px; }
+  @media (min-width:860px){
+    .readout{ padding:18px 20px; }
+    .ro-value{ font-size:26px; }
+    .ro-value.small{ font-size:19px; }
+  }
+
+  .hint{ font-size:12.5px; color:var(--muted); margin:10px 0 0; line-height:1.55; }
+  .hint b{ color:var(--text); }
+
+  footer.credit{ margin-top:20px; font-size:11.5px; color:var(--muted); text-align:center; }
+
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="titles">
+      <p class="eyebrow">RF &amp; RF-level toolkit</p>
+      <h1>dB Calculator</h1>
+      <p class="sub">Five linked tools for power, voltage, unit and mismatch calculations — dBm level summing, correlated/uncorrelated voltage summing, a full unit converter, a dB↔ratio converter, and a VSWR/return-loss converter.</p>
+    </div>
+    <div class="theme-toggle" id="theme-toggle" role="group" aria-label="Theme">
+      <button type="button" data-theme="light" aria-pressed="false" title="Light">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="tl">Light</span>
+      </button>
+      <button type="button" data-theme="system" aria-pressed="true" title="System">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><span class="tl">Auto</span>
+      </button>
+      <button type="button" data-theme="dark" aria-pressed="false" title="Dark">
+        <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span class="tl">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Calculator tool">
+    <button class="tab-btn" role="tab" data-tab="dbm" aria-selected="true"><span class="long">dBm Calculator</span><span class="short">dBm</span></button>
+    <button class="tab-btn" role="tab" data-tab="volt" aria-selected="false"><span class="long">Voltage Calculator</span><span class="short">Voltage</span></button>
+    <button class="tab-btn" role="tab" data-tab="unit" aria-selected="false"><span class="long">Unit Converter</span><span class="short">Units</span></button>
+    <button class="tab-btn" role="tab" data-tab="dbc" aria-selected="false"><span class="long">dB Converter</span><span class="short">dB</span></button>
+    <button class="tab-btn" role="tab" data-tab="vswr" aria-selected="false"><span class="long">VSWR Converter</span><span class="short">VSWR</span></button>
+  </nav>
+
+  <!-- ============ dBm CALCULATOR ============ -->
+  <section class="panel" id="panel-dbm" role="tabpanel">
+    <div class="panel-head">
+      <p class="panel-title">dBm Calculator</p>
+      <p class="panel-note">Adds and subtracts an arbitrary number of power levels given in dBm, dBW, W, mW or µW. Each level is converted to watts, combined with its sign, then converted back.</p>
+    </div>
+    <div class="panel-grid">
+    <div class="panel-inputs">
+    <div class="rows" id="dbm-rows"></div>
+    <button class="add-btn" id="dbm-add" type="button">+ Add level</button>
+    </div>
+    <div class="panel-result">
+    <div class="readout">
+      <div class="readout-grid">
+        <div class="ro-item">
+          <div class="ro-label">Total power</div>
+          <div class="ro-value" id="dbm-out-dbm">—<span class="ro-unit">dBm</span></div>
+        </div>
+        <div class="ro-item">
+          <div class="ro-label">Total power</div>
+          <div class="ro-value" id="dbm-out-w">—<span class="ro-unit">W</span></div>
+        </div>
+        <div class="ro-item">
+          <div class="ro-label">Total power</div>
+          <div class="ro-value small" id="dbm-out-dbw">—<span class="ro-unit">dBW</span></div>
+        </div>
+        <div class="ro-item">
+          <div class="ro-label">Total power</div>
+          <div class="ro-value small" id="dbm-out-mw">—<span class="ro-unit">mW</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Power levels always add incoherently (as watts) — there is no correlated/uncorrelated choice here, unlike the Voltage Calculator.</p>
+    </div>
+    </div>
+  </section>
+
+  <!-- ============ VOLTAGE CALCULATOR ============ -->
+  <section class="panel" id="panel-volt" role="tabpanel" hidden>
+    <div class="panel-head">
+      <p class="panel-title">Voltage Calculator</p>
+      <p class="panel-note">Adds and subtracts correlated (in‑phase, worst‑case) or uncorrelated (random‑phase, RMS) voltage levels at a common impedance.</p>
+    </div>
+    <div class="panel-grid">
+    <div class="panel-inputs">
+    <div class="field-row">
+      <div class="field narrow">
+        <label class="flabel" for="volt-z">Impedance (Ω)</label>
+        <input type="number" id="volt-z" value="50" min="0.001" step="any" inputmode="decimal">
+      </div>
+      <div class="field auto">
+        <label class="flabel">Summing mode</label>
+        <div class="seg" id="volt-mode">
+          <button type="button" data-mode="uncorrelated" aria-pressed="true">Uncorrelated</button>
+          <button type="button" data-mode="correlated" aria-pressed="false">Correlated</button>
+        </div>
+      </div>
+    </div>
+    <div class="rows" id="volt-rows"></div>
+    <button class="add-btn" id="volt-add" type="button">+ Add level</button>
+    </div>
+    <div class="panel-result">
+    <div class="readout">
+      <div class="readout-grid">
+        <div class="ro-item">
+          <div class="ro-label">Total voltage</div>
+          <div class="ro-value" id="volt-out-v">—<span class="ro-unit">V</span></div>
+        </div>
+        <div class="ro-item">
+          <div class="ro-label">Total voltage</div>
+          <div class="ro-value" id="volt-out-dbuv">—<span class="ro-unit">dBµV</span></div>
+        </div>
+        <div class="ro-item">
+          <div class="ro-label">Equivalent power</div>
+          <div class="ro-value small" id="volt-out-dbm">—<span class="ro-unit">dBm</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="hint"><b>Uncorrelated</b> sums power‑wise: V = √(ΣVᵢ²) (e.g. independent noise sources). <b>Correlated</b> sums voltage‑wise: V = ΣVᵢ (e.g. coherent signals in phase). The two give very different results for the same input levels.</p>
+    </div>
+    </div>
+  </section>
+
+  <!-- ============ UNIT CONVERTER ============ -->
+  <section class="panel" id="panel-unit" role="tabpanel" hidden>
+    <div class="panel-head">
+      <p class="panel-title">Unit Converter</p>
+      <p class="panel-note">Enter one value in any unit and the impedance it's referenced to; every other power and voltage unit is computed at once.</p>
+    </div>
+    <div class="panel-grid wide">
+    <div class="panel-inputs">
+    <div class="field-row">
+      <div class="field">
+        <label class="flabel" for="unit-val">Value</label>
+        <input type="number" id="unit-val" value="0" step="any" inputmode="decimal">
+      </div>
+      <div class="field narrow">
+        <label class="flabel" for="unit-sel">Unit</label>
+        <select id="unit-sel">
+          <option value="dBm">dBm</option>
+          <option value="dBW">dBW</option>
+          <option value="mW">mW</option>
+          <option value="W">W</option>
+          <option value="mV">mV</option>
+          <option value="V">V</option>
+          <option value="dBV">dBV</option>
+          <option value="dBuV">dBµV</option>
+          <option value="dBu">dBu</option>
+        </select>
+      </div>
+      <div class="field narrow">
+        <label class="flabel" for="unit-z">Impedance (Ω)</label>
+        <input type="number" id="unit-z" value="50" min="0.001" step="any" inputmode="decimal">
+      </div>
+    </div>
+    </div>
+    <div class="panel-result">
+    <div class="readout">
+      <div class="readout-grid cols3" id="unit-grid"></div>
+    </div>
+    <p class="hint">dBu is referenced to 0.775 V regardless of impedance; every other power↔voltage conversion uses the impedance above.</p>
+    </div>
+    </div>
+  </section>
+
+  <!-- ============ dB CONVERTER ============ -->
+  <section class="panel" id="panel-dbc" role="tabpanel" hidden>
+    <div class="panel-head">
+      <p class="panel-title">dB Converter</p>
+      <p class="panel-note">Converts a linear ratio to dB, or a dB value back to a linear ratio — edit either field, the other updates.</p>
+    </div>
+    <div class="field-row">
+      <div class="field auto">
+        <label class="flabel">Ratio type</label>
+        <div class="seg" id="dbc-mode">
+          <button type="button" data-mode="power" aria-pressed="true">Power ratio</button>
+          <button type="button" data-mode="voltage" aria-pressed="false">Voltage / field ratio</button>
+        </div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="flabel" for="dbc-ratio">Linear ratio (P₂/P₁ or V₂/V₁)</label>
+        <input type="number" id="dbc-ratio" value="2" step="any" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label class="flabel" for="dbc-db">dB</label>
+        <input type="number" id="dbc-db" value="3.0103" step="any" inputmode="decimal">
+      </div>
+    </div>
+    <p class="hint" id="dbc-formula">Power: dB = 10·log₁₀(ratio) &nbsp;·&nbsp; ratio = 10^(dB/10)</p>
+  </section>
+
+  <!-- ============ VSWR CONVERTER ============ -->
+  <section class="panel" id="panel-vswr" role="tabpanel" hidden>
+    <div class="panel-head">
+      <p class="panel-title">VSWR Converter</p>
+      <p class="panel-note">Converts between reflection quantities — VSWR, reflection coefficient Γ, return loss and mismatch loss — and, given a forward power or voltage, the reflected value.</p>
+    </div>
+    <div class="panel-grid wide">
+    <div class="panel-inputs">
+    <div class="field-row">
+      <div class="field auto">
+        <label class="flabel">Driven by</label>
+        <div class="seg" id="vswr-mode">
+          <button type="button" data-mode="vswr" aria-pressed="true">VSWR</button>
+          <button type="button" data-mode="gamma" aria-pressed="false">Γ</button>
+          <button type="button" data-mode="rl" aria-pressed="false">Return loss</button>
+        </div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field narrow">
+        <label class="flabel" for="vswr-val">VSWR</label>
+        <input type="number" id="vswr-val" value="1.5" step="0.1" min="1" inputmode="decimal">
+      </div>
+      <div class="field narrow">
+        <label class="flabel" for="vswr-pf">Forward power (W)</label>
+        <input type="number" id="vswr-pf" value="" step="any" min="0" placeholder="optional" inputmode="decimal">
+      </div>
+      <div class="field narrow">
+        <label class="flabel" for="vswr-vf">Forward voltage (V)</label>
+        <input type="number" id="vswr-vf" value="" step="any" min="0" placeholder="optional" inputmode="decimal">
+      </div>
+    </div>
+    </div>
+    <div class="panel-result">
+    <div class="readout">
+      <div class="readout-grid cols3" id="vswr-grid"></div>
+    </div>
+    <p class="hint">Γ = (VSWR−1)/(VSWR+1) · Return loss = −20·log₁₀Γ dB · Mismatch loss = −10·log₁₀(1−Γ²) dB · reflected power = Γ²·forward power.</p>
+    </div>
+    </div>
+  </section>
+
+  <footer class="credit">All five tools compute locally in this page — no data leaves your browser.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- shared helpers ----------
+  function fmt(x, d){
+    if (d === undefined) d = 4;
+    if (typeof x !== "number" || isNaN(x)) return "—";
+    if (!isFinite(x)) return x > 0 ? "∞" : "−∞";
+    if (Math.abs(x) < 1e-15) return "0";
+    var ax = Math.abs(x), s;
+    if (ax < 1e-4 || ax >= 1e9){
+      // scientific notation with 5 significant digits, trimmed
+      s = x.toExponential(4);
+      var m = s.split("e");
+      m[0] = m[0].replace(/\.?0+$/,"");
+      s = m[0] + "e" + m[1].replace("+","");
+    } else {
+      s = x.toFixed(d);
+      if (s.indexOf(".") !== -1) s = s.replace(/0+$/,"").replace(/\.$/,"");
+      if (s === "-0") s = "0";
+    }
+    return s;
+  }
+  function num(el){ var v = parseFloat(el.value); return isFinite(v) ? v : NaN; }
+
+  // dBm <-> W
+  function dbmToW(dbm){ return Math.pow(10, dbm/10) / 1000; }
+  function wToDbm(w){ return w > 0 ? 10*Math.log10(w*1000) : (w === 0 ? -Infinity : NaN); }
+
+  // V <-> P (impedance Z)
+  function vToP(v,z){ return (v*v)/z; }
+  function pToV(p,z){ return p >= 0 ? Math.sqrt(p*z) : NaN; }
+
+  // voltage dB units
+  function vToDbv(v){ return v>0 ? 20*Math.log10(v) : (v===0?-Infinity:NaN); }
+  function dbvToV(db){ return Math.pow(10, db/20); }
+  function vToDbuv(v){ return vToDbv(v) + 120; }
+  function dbuvToV(db){ return dbvToV(db - 120); }
+  function vToDbu(v){ return v>0 ? 20*Math.log10(v/0.775) : (v===0?-Infinity:NaN); }
+  function dbuToV(db){ return 0.775*Math.pow(10, db/20); }
+
+  // ============================================================
+  // THEME TOGGLE (light / system / dark) — remembered per browser
+  // ============================================================
+  var themeBtns = Array.prototype.slice.call(document.querySelectorAll("#theme-toggle button"));
+  function applyTheme(mode){
+    var root = document.documentElement;
+    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode);
+    else root.removeAttribute("data-theme");
+    themeBtns.forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.theme === mode ? "true" : "false"); });
+    try { localStorage.setItem("dbcalc-theme", mode); } catch(e){}
+  }
+  themeBtns.forEach(function(b){ b.addEventListener("click", function(){ applyTheme(b.dataset.theme); }); });
+  (function(){
+    var saved = null;
+    try { saved = localStorage.getItem("dbcalc-theme"); } catch(e){}
+    if (saved === "light" || saved === "dark") applyTheme(saved);
+    else {
+      // respect a theme the viewer already stamped on the page
+      var cur = document.documentElement.getAttribute("data-theme");
+      themeBtns.forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.theme === (cur || "system") ? "true" : "false"); });
+    }
+  })();
+
+  // ============================================================
+  // TABS
+  // ============================================================
+  var tabBtns = Array.prototype.slice.call(document.querySelectorAll(".tab-btn"));
+  var panels = { dbm:"panel-dbm", volt:"panel-volt", unit:"panel-unit", dbc:"panel-dbc", vswr:"panel-vswr" };
+  tabBtns.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      tabBtns.forEach(function(b){ b.setAttribute("aria-selected","false"); });
+      btn.setAttribute("aria-selected","true");
+      Object.keys(panels).forEach(function(k){
+        document.getElementById(panels[k]).hidden = (k !== btn.dataset.tab);
+      });
+    });
+  });
+
+  // ============================================================
+  // dBm CALCULATOR
+  // ============================================================
+  var dbmRowsEl = document.getElementById("dbm-rows");
+  var dbmRowId = 0;
+  function addDbmRow(op, val, unit, isFirst){
+    var id = "dbmrow" + (dbmRowId++);
+    var row = document.createElement("div");
+    row.className = "level-row";
+    row.dataset.id = id;
+    row.innerHTML =
+      '<div class="opgrp" data-role="op">' +
+        '<button type="button" data-op="+" class="' + (op !== "-" ? "active" : "") + '"' + (isFirst ? " disabled" : "") + '>+</button>' +
+        '<button type="button" data-op="-" class="' + (op === "-" ? "active" : "") + '"' + (isFirst ? " disabled" : "") + '>−</button>' +
+      '</div>' +
+      '<input type="number" step="any" inputmode="decimal" data-role="val" value="' + val + '">' +
+      '<select data-role="unit">' +
+        '<option value="dBm"' + (unit==="dBm"?" selected":"") + '>dBm</option>' +
+        '<option value="dBW"' + (unit==="dBW"?" selected":"") + '>dBW</option>' +
+        '<option value="W"' + (unit==="W"?" selected":"") + '>W</option>' +
+        '<option value="mW"' + (unit==="mW"?" selected":"") + '>mW</option>' +
+        '<option value="uW"' + (unit==="uW"?" selected":"") + '>µW</option>' +
+      '</select>' +
+      (isFirst ? '<span class="spacer"></span>' : '<button type="button" class="rm-btn" title="Remove level" aria-label="Remove level">×</button>');
+    row.querySelectorAll('[data-role="op"] button').forEach(function(b){
+      b.addEventListener("click", function(){
+        if (b.disabled) return;
+        row.querySelectorAll('[data-role="op"] button').forEach(function(x){ x.classList.remove("active"); });
+        b.classList.add("active");
+        computeDbm();
+      });
+    });
+    row.querySelector('[data-role="val"]').addEventListener("input", computeDbm);
+    row.querySelector('[data-role="unit"]').addEventListener("change", computeDbm);
+    var rm = row.querySelector(".rm-btn");
+    if (rm) rm.addEventListener("click", function(){ row.remove(); computeDbm(); });
+    dbmRowsEl.appendChild(row);
+  }
+  document.getElementById("dbm-add").addEventListener("click", function(){ addDbmRow("+", 0, "dBm", false); computeDbm(); });
+
+  function computeDbm(){
+    var rows = dbmRowsEl.querySelectorAll(".level-row");
+    var totalW = 0;
+    rows.forEach(function(row){
+      var opBtn = row.querySelector('[data-role="op"] button.active');
+      var op = opBtn ? opBtn.dataset.op : "+";
+      var v = num(row.querySelector('[data-role="val"]'));
+      var unit = row.querySelector('[data-role="unit"]').value;
+      if (isNaN(v)) return;
+      var w;
+      switch(unit){
+        case "dBm": w = dbmToW(v); break;
+        case "dBW": w = dbmToW(v + 30); break;
+        case "W":   w = v; break;
+        case "mW":  w = v/1000; break;
+        case "uW":  w = v/1e6; break;
+        default:    w = NaN;
+      }
+      if (isNaN(w)) return;
+      totalW += (op === "-" ? -w : w);
+    });
+    document.getElementById("dbm-out-w").innerHTML = fmt(totalW, 6) + '<span class="ro-unit">W</span>';
+    var totalDbm = wToDbm(totalW);
+    document.getElementById("dbm-out-dbm").innerHTML = fmt(totalDbm, 3) + '<span class="ro-unit">dBm</span>';
+    document.getElementById("dbm-out-dbw").innerHTML = fmt(totalDbm - 30, 3) + '<span class="ro-unit">dBW</span>';
+    document.getElementById("dbm-out-mw").innerHTML = fmt(totalW*1000, 4) + '<span class="ro-unit">mW</span>';
+  }
+  addDbmRow("+", 30, "dBm", true);
+  addDbmRow("+", 27, "dBm", false);
+  computeDbm();
+
+  // ============================================================
+  // VOLTAGE CALCULATOR
+  // ============================================================
+  var voltRowsEl = document.getElementById("volt-rows");
+  var voltRowId = 0;
+  var voltMode = "uncorrelated";
+  document.querySelectorAll("#volt-mode button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#volt-mode button").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+      b.setAttribute("aria-pressed","true");
+      voltMode = b.dataset.mode;
+      computeVolt();
+    });
+  });
+  document.getElementById("volt-z").addEventListener("input", computeVolt);
+
+  function addVoltRow(op, val, unit, isFirst){
+    var id = "voltrow" + (voltRowId++);
+    var row = document.createElement("div");
+    row.className = "level-row";
+    row.dataset.id = id;
+    row.innerHTML =
+      '<div class="opgrp" data-role="op">' +
+        '<button type="button" data-op="+" class="' + (op !== "-" ? "active" : "") + '"' + (isFirst ? " disabled" : "") + '>+</button>' +
+        '<button type="button" data-op="-" class="' + (op === "-" ? "active" : "") + '"' + (isFirst ? " disabled" : "") + '>−</button>' +
+      '</div>' +
+      '<input type="number" step="any" inputmode="decimal" data-role="val" value="' + val + '">' +
+      '<select data-role="unit">' +
+        '<option value="V"' + (unit==="V"?" selected":"") + '>V</option>' +
+        '<option value="mV"' + (unit==="mV"?" selected":"") + '>mV</option>' +
+        '<option value="dBV"' + (unit==="dBV"?" selected":"") + '>dBV</option>' +
+        '<option value="dBuV"' + (unit==="dBuV"?" selected":"") + '>dBµV</option>' +
+      '</select>' +
+      (isFirst ? '<span class="spacer"></span>' : '<button type="button" class="rm-btn" title="Remove level" aria-label="Remove level">×</button>');
+    row.querySelectorAll('[data-role="op"] button').forEach(function(b){
+      b.addEventListener("click", function(){
+        if (b.disabled) return;
+        row.querySelectorAll('[data-role="op"] button').forEach(function(x){ x.classList.remove("active"); });
+        b.classList.add("active");
+        computeVolt();
+      });
+    });
+    row.querySelector('[data-role="val"]').addEventListener("input", computeVolt);
+    row.querySelector('[data-role="unit"]').addEventListener("change", computeVolt);
+    var rm = row.querySelector(".rm-btn");
+    if (rm) rm.addEventListener("click", function(){ row.remove(); computeVolt(); });
+    voltRowsEl.appendChild(row);
+  }
+  document.getElementById("volt-add").addEventListener("click", function(){ addVoltRow("+", 0, "V", false); computeVolt(); });
+
+  function voltRowToV(row){
+    var v = num(row.querySelector('[data-role="val"]'));
+    var unit = row.querySelector('[data-role="unit"]').value;
+    if (isNaN(v)) return NaN;
+    if (unit === "V") return v;
+    if (unit === "mV") return v/1000;
+    if (unit === "dBV") return dbvToV(v);
+    if (unit === "dBuV") return dbuvToV(v);
+    return NaN;
+  }
+
+  function computeVolt(){
+    var z = num(document.getElementById("volt-z"));
+    if (!isFinite(z) || z <= 0) z = 50;
+    var rows = voltRowsEl.querySelectorAll(".level-row");
+    var totalV;
+    if (voltMode === "uncorrelated"){
+      var sumSq = 0;
+      rows.forEach(function(row){
+        var opBtn = row.querySelector('[data-role="op"] button.active');
+        var op = opBtn ? opBtn.dataset.op : "+";
+        var v = voltRowToV(row);
+        if (isNaN(v)) return;
+        sumSq += (op === "-" ? -1 : 1) * v*v;
+      });
+      totalV = sumSq >= 0 ? Math.sqrt(sumSq) : NaN;
+    } else {
+      var sum = 0;
+      rows.forEach(function(row){
+        var opBtn = row.querySelector('[data-role="op"] button.active');
+        var op = opBtn ? opBtn.dataset.op : "+";
+        var v = voltRowToV(row);
+        if (isNaN(v)) return;
+        sum += (op === "-" ? -v : v);
+      });
+      totalV = Math.abs(sum);
+    }
+    document.getElementById("volt-out-v").innerHTML = fmt(totalV, 6) + '<span class="ro-unit">V</span>';
+    document.getElementById("volt-out-dbuv").innerHTML = fmt(vToDbuv(totalV), 3) + '<span class="ro-unit">dBµV</span>';
+    document.getElementById("volt-out-dbm").innerHTML = fmt(wToDbm(vToP(totalV, z)), 3) + '<span class="ro-unit">dBm</span>';
+  }
+  addVoltRow("+", 1, "V", true);
+  addVoltRow("+", 1, "V", false);
+  computeVolt();
+
+  // ============================================================
+  // UNIT CONVERTER
+  // ============================================================
+  var unitGrid = document.getElementById("unit-grid");
+  var UNIT_LABELS = [
+    ["dBm","dBm"], ["dBW","dBW"], ["mW","mW"], ["W","W"],
+    ["mV","mV"], ["V","V"], ["dBV","dBV"], ["dBuV","dBµV"], ["dBu","dBu"]
+  ];
+  UNIT_LABELS.forEach(function(pair){
+    var item = document.createElement("div");
+    item.className = "ro-item";
+    item.innerHTML = '<div class="ro-label">' + pair[1] + '</div><div class="ro-value small" id="unit-out-' + pair[0] + '">—</div>';
+    unitGrid.appendChild(item);
+  });
+
+  function computeUnit(){
+    var val = num(document.getElementById("unit-val"));
+    var unit = document.getElementById("unit-sel").value;
+    var z = num(document.getElementById("unit-z"));
+    if (!isFinite(z) || z <= 0) z = 50;
+    if (isNaN(val)){
+      UNIT_LABELS.forEach(function(p){ document.getElementById("unit-out-" + p[0]).textContent = "—"; });
+      return;
+    }
+    var w, v;
+    switch(unit){
+      case "dBm": w = dbmToW(val); v = pToV(w, z); break;
+      case "dBW": w = dbmToW(val + 30); v = pToV(w, z); break;
+      case "mW":  w = val/1000; v = pToV(w, z); break;
+      case "W":   w = val; v = pToV(w, z); break;
+      case "mV":  v = val/1000; w = vToP(v, z); break;
+      case "V":   v = val; w = vToP(v, z); break;
+      case "dBV": v = dbvToV(val); w = vToP(v, z); break;
+      case "dBuV":v = dbuvToV(val); w = vToP(v, z); break;
+      case "dBu": v = dbuToV(val); w = vToP(v, z); break;
+    }
+    var dbm = wToDbm(w);
+    var out = {
+      dBm: dbm, dBW: dbm - 30, mW: w*1000, W: w,
+      mV: v*1000, V: v, dBV: vToDbv(v), dBuV: vToDbuv(v), dBu: vToDbu(v)
+    };
+    UNIT_LABELS.forEach(function(p){
+      document.getElementById("unit-out-" + p[0]).textContent = fmt(out[p[0]], (p[0]==="mW"||p[0]==="mV")?4:5);
+    });
+  }
+  ["unit-val","unit-z"].forEach(function(id){ document.getElementById(id).addEventListener("input", computeUnit); });
+  document.getElementById("unit-sel").addEventListener("change", computeUnit);
+  computeUnit();
+
+  // ============================================================
+  // dB CONVERTER
+  // ============================================================
+  var dbcMode = "power";
+  var dbcRatioEl = document.getElementById("dbc-ratio");
+  var dbcDbEl = document.getElementById("dbc-db");
+  var dbcFormula = document.getElementById("dbc-formula");
+  var dbcLast = "ratio";
+
+  document.querySelectorAll("#dbc-mode button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#dbc-mode button").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+      b.setAttribute("aria-pressed","true");
+      dbcMode = b.dataset.mode;
+      dbcFormula.innerHTML = dbcMode === "power"
+        ? "Power: dB = 10·log₁₀(ratio) &nbsp;·&nbsp; ratio = 10^(dB/10)"
+        : "Voltage / field: dB = 20·log₁₀(ratio) &nbsp;·&nbsp; ratio = 10^(dB/20)";
+      recalcFromRatio();
+    });
+  });
+
+  function factor(){ return dbcMode === "power" ? 10 : 20; }
+  function recalcFromRatio(){
+    var r = num(dbcRatioEl);
+    if (isNaN(r) || r <= 0){ dbcDbEl.value = ""; return; }
+    dbcDbEl.value = fmt(factor() * Math.log10(r), 6);
+  }
+  function recalcFromDb(){
+    var d = num(dbcDbEl);
+    if (isNaN(d)){ dbcRatioEl.value = ""; return; }
+    dbcRatioEl.value = fmt(Math.pow(10, d/factor()), 6);
+  }
+  dbcRatioEl.addEventListener("input", function(){ dbcLast = "ratio"; recalcFromRatio(); });
+  dbcDbEl.addEventListener("input", function(){ dbcLast = "db"; recalcFromDb(); });
+  recalcFromRatio();
+
+  // ============================================================
+  // VSWR CONVERTER
+  // ============================================================
+  var vswrMode = "vswr";
+  var vswrGrid = document.getElementById("vswr-grid");
+  var VSWR_LABELS = [
+    ["vswr","VSWR",""], ["gamma","Reflection coeff. Γ",""], ["rl","Return loss","dB"],
+    ["ml","Mismatch loss","dB"], ["rp","Reflected power","%"],
+    ["prefl","Reflected power","W"], ["vrefl","Reflected voltage","V"]
+  ];
+  VSWR_LABELS.forEach(function(p){
+    var item = document.createElement("div");
+    item.className = "ro-item";
+    item.innerHTML = '<div class="ro-label">' + p[1] + '</div><div class="ro-value small" id="vswr-out-' + p[0] + '">—' +
+      (p[2] ? '<span class="ro-unit">' + p[2] + '</span>' : '') + '</div>';
+    vswrGrid.appendChild(item);
+  });
+
+  document.querySelectorAll("#vswr-mode button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#vswr-mode button").forEach(function(x){ x.setAttribute("aria-pressed","false"); });
+      b.setAttribute("aria-pressed","true");
+      vswrMode = b.dataset.mode;
+      var lbl = document.querySelector('label[for="vswr-val"]');
+      var val = document.getElementById("vswr-val");
+      if (vswrMode === "vswr"){ lbl.textContent = "VSWR"; val.value = "1.5"; val.min = "1"; val.step = "0.1"; val.removeAttribute("max"); }
+      if (vswrMode === "gamma"){ lbl.textContent = "Γ (0–1)"; val.value = "0.2"; val.min = "0"; val.max="1"; val.step = "0.01"; }
+      if (vswrMode === "rl"){ lbl.textContent = "Return loss (dB)"; val.value = "14"; val.removeAttribute("min"); val.removeAttribute("max"); val.step = "0.1"; }
+      computeVswr();
+    });
+  });
+  document.getElementById("vswr-val").addEventListener("input", computeVswr);
+  document.getElementById("vswr-pf").addEventListener("input", computeVswr);
+  document.getElementById("vswr-vf").addEventListener("input", computeVswr);
+
+  function computeVswr(){
+    var raw = num(document.getElementById("vswr-val"));
+    var gamma;
+    if (vswrMode === "vswr"){
+      var s = raw;
+      gamma = (isFinite(s) && s >= 1) ? (s-1)/(s+1) : NaN;
+    } else if (vswrMode === "gamma"){
+      gamma = (isFinite(raw) && raw >= 0 && raw <= 1) ? raw : NaN;
+    } else { // rl
+      gamma = isFinite(raw) ? Math.pow(10, -raw/20) : NaN;
+    }
+    if (isFinite(gamma) && (gamma < 0 || gamma > 1)) gamma = NaN;   // physically impossible
+    var vswr = !isFinite(gamma) ? NaN : (gamma < 1 ? (1+gamma)/(1-gamma) : Infinity);
+    var rl   = !isFinite(gamma) ? NaN : (gamma > 0 ? -20*Math.log10(gamma) : Infinity);
+    var ml   = !isFinite(gamma) ? NaN : (gamma < 1 ? -10*Math.log10(1-gamma*gamma) : Infinity);
+    var rp   = !isFinite(gamma) ? NaN : gamma*gamma*100;
+
+    document.getElementById("vswr-out-vswr").innerHTML = fmt(vswr,4);
+    document.getElementById("vswr-out-gamma").innerHTML = fmt(gamma,5);
+    document.getElementById("vswr-out-rl").innerHTML = fmt(rl,3) + '<span class="ro-unit">dB</span>';
+    document.getElementById("vswr-out-ml").innerHTML = fmt(ml,4) + '<span class="ro-unit">dB</span>';
+    document.getElementById("vswr-out-rp").innerHTML = fmt(rp,3) + '<span class="ro-unit">%</span>';
+
+    var pf = num(document.getElementById("vswr-pf"));
+    var vf = num(document.getElementById("vswr-vf"));
+    var pr = (isFinite(pf) && isFinite(gamma)) ? pf*gamma*gamma : NaN;
+    var vr = (isFinite(vf) && isFinite(gamma)) ? vf*gamma : NaN;
+    document.getElementById("vswr-out-prefl").innerHTML = fmt(pr,5) + '<span class="ro-unit">W</span>';
+    document.getElementById("vswr-out-vrefl").innerHTML = fmt(vr,5) + '<span class="ro-unit">V</span>';
+  }
+  computeVswr();
+
+})();
+</script>
+
+</body>
+</html>
